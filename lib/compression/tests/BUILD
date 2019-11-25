@@ -4,6 +4,6 @@ cc_test(
   deps = [
     "@gtest//:gtest",
     "@gtest//:gtest_main",
-    "//compression:compression",
+    "//lib/compression:compression",
   ],
 )

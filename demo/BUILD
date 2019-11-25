@@ -2,6 +2,6 @@ cc_binary(
   name = "lzw",
   srcs = ["src/lzw.cpp"],
   deps = [
-    "//compression:compression",
+    "//lib/compression:compression",
   ],
 )
