@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <vector>
+#include <iterator>
 
 namespace utils::bytes
 {
@@ -30,6 +31,40 @@ namespace detail
     }
   };
 
+  template <typename T>
+  struct ByteDecoder
+  {
+    static constexpr std::size_t bytes_count = sizeof(T);
+
+    template <class Container>
+    T operator()(Container c) noexcept
+    {
+      static_assert(sizeof(typename Container::value_type) == 1);
+      return impl(std::rbegin(c), std::rend(c));
+    }
+
+    template <typename U, std::size_t N>
+    T operator()(const U (&c)[N]) noexcept
+    {
+      static_assert(sizeof(U) == 1);
+      return impl(std::rbegin(c), std::rend(c));
+    }
+
+  private:
+    template <typename InputIt>
+    T impl(InputIt rbegin, InputIt rend) noexcept
+    {
+      T res = 0;
+
+      for (auto it = rbegin; it != rend; it++)
+      {
+        (res <<= 8) |= *it;
+      }
+
+      return res;
+    }
+  };
+
 }  // namespace detail
 
 template <typename T>
@@ -38,6 +73,18 @@ static typename detail::ByteEncoder<T>::FixedByteSequence to_bytes(T val)
   static_assert(std::is_integral_v<T>, "Integral value required.");
 
   return detail::ByteEncoder<T>{}(val);
+}
+
+template <typename T, class Container>
+static T from_bytes(Container c)
+{
+  return detail::ByteDecoder<T>{}(c);
+}
+
+template <typename T, class U, std::size_t N>
+static T from_bytes(const U (&array)[N])
+{
+  return detail::ByteDecoder<T>{}(array);
 }
 
 using ByteSequence = std::vector<std::byte>;
