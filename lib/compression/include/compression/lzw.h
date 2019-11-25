@@ -1,8 +1,7 @@
 #pragma once
 
-#include "compression/bytes.h"
-#include "compression/commons.h"
 #include "compression/seq.h"
+#include "utils/bytes.h"
 
 #include <algorithm>
 #include <array>
@@ -91,7 +90,7 @@ public:
    * \param seq The byte sequence to be added
    * \returns The index of the last node that has been added.
    */
-  std::size_t put_sequence(const commons::ByteArray &seq) noexcept
+  std::size_t put_sequence(const utils::bytes::ByteSequence &seq) noexcept
   {
     Node *curr = root_.get();
     std::size_t front = 0;
@@ -124,7 +123,7 @@ public:
    * \param bytes The byte array to be searched for.
    * \return The index of the last node in the given sequence, or an empty optional otherwise.
    */
-  std::optional<std::size_t> find(const commons::ByteArray &bytes) const noexcept
+  std::optional<std::size_t> find(const utils::bytes::ByteSequence &bytes) const noexcept
   {
     Node *curr = root_.get();
     std::size_t front = 0;
@@ -151,7 +150,7 @@ public:
    */
   std::optional<std::size_t> find(std::string_view sv) const noexcept
   {
-    commons::ByteArray bytes;
+    utils::bytes::ByteSequence bytes;
     bytes.reserve(sv.size());
 
     for (auto it = sv.cbegin(); it != sv.cend(); ++it)
@@ -171,7 +170,7 @@ public:
    * \returns A byte sequence containing the found sequence, or an empty sequence if the sequence
    * does not exist.
    */
-  commons::ByteArray at(std::size_t index) const noexcept
+  utils::bytes::ByteSequence at(std::size_t index) const noexcept
   {
     if (!contains(index))
     {
@@ -185,9 +184,9 @@ public:
    * \brief Performs unchecked access on the dictionary.
    * \see Dictionary::at
    */
-  commons::ByteArray operator[](std::size_t index) const noexcept
+  utils::bytes::ByteSequence operator[](std::size_t index) const noexcept
   {
-    commons::ByteArray bytes;  // TODO Find the average sequence length and reserve it here.
+    utils::bytes::ByteSequence bytes;  // TODO Find the average sequence length and reserve it here.
     std::stack<std::byte> rev;
     auto curr = entries_[index];
 
@@ -222,11 +221,11 @@ template <std::uint8_t compression_level = 1>
 class LZW
 {
 protected:
-  static commons::ByteArray encode(const commons::ByteArray &raw)
+  static utils::bytes::ByteSequence encode(const utils::bytes::ByteSequence &raw)
   {
     Dictionary dict;
-    commons::ByteArray encoded;
-    commons::ByteArray temp;
+    utils::bytes::ByteSequence encoded;
+    utils::bytes::ByteSequence temp;
 
     int pos_count = 0;
 
@@ -234,14 +233,14 @@ protected:
     {
       std::byte x = raw[i];
 
-      commons::ByteArray next_seq{seq::emplace_back_copy(temp, x)};
+      utils::bytes::ByteSequence next_seq{seq::emplace_back_copy(temp, x)};
 
       if (!dict.find(next_seq))  // We don't have the entry Ix in dictionary
       {
         dict.put_sequence(next_seq);
         std::uint16_t p = *dict.find(temp);
 
-        auto bytes = bytes::to_bytes(p);
+        auto bytes = utils::bytes::to_bytes(p);
         encoded.insert(encoded.end(), std::make_move_iterator(bytes.cbegin()),
             std::make_move_iterator(bytes.cend()));
 
@@ -257,7 +256,7 @@ protected:
     return encoded;
   }
 
-  static commons::ByteArray decode(const commons::ByteArray &encoded)
+  static utils::bytes::ByteSequence decode(const utils::bytes::ByteSequence &encoded)
   {}
 };
 

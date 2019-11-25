@@ -1,12 +1,11 @@
-#include "compression/lzw.h"
 #include "compression/compressor.h"
-#include "compression/commons.h"
+#include "compression/lzw.h"
+#include "utils/bytes.h"
 
 #include "gtest/gtest.h"
-
 #include <cstdint>
-#include <string>
 #include <iterator>
+#include <string>
 
 namespace compression
 {
@@ -29,17 +28,11 @@ TEST(Dictionary, PutSequence)
 {
   Dictionary dict;
 
-  std::string sequences[]{
-    "foo",
-    "bar",
-    "foobaz",
-    "foobar",
-    "barbar"
-  };
+  std::string sequences[]{"foo", "bar", "foobaz", "foobar", "barbar"};
 
   for (auto it = std::begin(sequences); it != std::end(sequences); it++)
   {
-    dict.put_sequence(commons::to_byte_array(*it));
+    dict.put_sequence(utils::bytes::to_byte_array(*it));
   }
 
   for (auto it = std::begin(sequences); it != std::end(sequences); it++)
@@ -52,17 +45,11 @@ TEST(Dictionary, Find)
 {
   Dictionary dict;
 
-  std::string sequences[]{
-    "foo",
-    "bar",
-    "foobaz",
-    "foobar",
-    "barbar"
-  };
+  std::string sequences[]{"foo", "bar", "foobaz", "foobar", "barbar"};
 
   for (auto it = std::begin(sequences); it != std::end(sequences); it++)
   {
-    dict.put_sequence(commons::to_byte_array(*it));
+    dict.put_sequence(utils::bytes::to_byte_array(*it));
   }
 
   for (auto it = std::begin(sequences); it != std::end(sequences); it++)
@@ -78,26 +65,20 @@ TEST(Dictionary, Subscript)
 {
   Dictionary dict;
 
-  std::string sequences[]{
-    "foo",
-    "bar",
-    "foobaz",
-    "foobar",
-    "barbar"
-  };
+  std::string sequences[]{"foo", "bar", "foobaz", "foobar", "barbar"};
 
   std::map<std::size_t, std::string> positions;
 
   for (auto it = std::begin(sequences); it != std::end(sequences); it++)
   {
-    auto pos = dict.put_sequence(commons::to_byte_array(*it));
+    auto pos = dict.put_sequence(utils::bytes::to_byte_array(*it));
 
     positions.emplace(pos, *it);
   }
 
   for (const auto &entry : positions)
   {
-    EXPECT_EQ(dict[entry.first], commons::to_byte_array(entry.second));
+    EXPECT_EQ(dict[entry.first], utils::bytes::to_byte_array(entry.second));
   }
 }
 
@@ -108,4 +89,4 @@ TEST(Dictionary, At)
   EXPECT_TRUE(dict.at(512).empty());
 }
 
-}
+}  // namespace compression

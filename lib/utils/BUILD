@@ -1,5 +1,5 @@
 cc_library(
-    name = "compression",
+    name = "utils",
     srcs = glob(["src/**/*.cpp"]),
     hdrs = glob(["include/**/*.h"]),
     includes = [
@@ -7,6 +7,6 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        "//lib/utils:utils",
+        "@gtest//:gtest_prod",
     ],
 )

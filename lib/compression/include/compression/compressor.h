@@ -1,6 +1,6 @@
 #pragma once
 
-#include "compression/commons.h"
+#include "utils/bytes.h"
 
 namespace compression
 {
@@ -9,12 +9,12 @@ template <class Algo>
 class Compressor : protected Algo
 {
 public:
-  static commons::ByteArray compress(const commons::ByteArray &raw)
+  static utils::bytes::ByteSequence compress(const utils::bytes::ByteSequence &raw)
   {
     return Algo::encode(raw);
   }
 
-  static commons::ByteArray decompress(const commons::ByteArray &compressed)
+  static utils::bytes::ByteSequence decompress(const utils::bytes::ByteSequence &compressed)
   {
     return Algo::decode(compressed);
   }

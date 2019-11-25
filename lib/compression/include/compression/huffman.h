@@ -1,6 +1,6 @@
 #pragma once
 
-#include "compression/variants.h"
+#include "utils/bytes.h"
 
 namespace compression
 {
@@ -8,10 +8,10 @@ namespace compression
 class Huffman
 {
 protected:
-  static commons::ByteArray encode(const commons::ByteArray &raw)
+  static utils::bytes::ByteSequence encode(const utils::bytes::ByteSequence &raw)
   {}
 
-  static commons::ByteArray decode(const commons::ByteArray &encoded)
+  static utils::bytes::ByteSequence decode(const utils::bytes::ByteSequence &encoded)
   {}
 };
 
