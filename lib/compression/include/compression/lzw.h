@@ -206,6 +206,11 @@ public:
     return bytes;
   }
 
+  const Node *entry(std::size_t idx) const noexcept
+  {
+    return entries_[idx];
+  }
+
   std::size_t size() const noexcept
   {
     return size_;
@@ -224,8 +229,10 @@ protected:
   static utils::bytes::ByteSequence encode(const utils::bytes::ByteSequence &raw)
   {
     Dictionary dict;
-    utils::bytes::ByteSequence encoded;
     utils::bytes::ByteSequence temp;
+
+    std::vector<std::size_t> dict_ptrs;
+    dict_ptrs.reserve(raw.size());
 
     int pos_count = 0;
 
@@ -238,11 +245,9 @@ protected:
       if (!dict.find(next_seq))  // We don't have the entry Ix in dictionary
       {
         dict.put_sequence(next_seq);
-        std::uint16_t p = *dict.find(temp);
+        auto p = *dict.find(temp);
 
-        auto bytes = utils::bytes::to_bytes(p);
-        encoded.insert(encoded.end(), std::make_move_iterator(bytes.cbegin()),
-            std::make_move_iterator(bytes.cend()));
+        dict_ptrs.push_back(p);
 
         temp.clear();
         temp.emplace_back(x);
@@ -251,6 +256,34 @@ protected:
       }
 
       temp.push_back(raw[i]);
+    }
+
+    /*
+     * We need to determine how many bits per dictionary pointer our archive requires. Currently,
+     * this implementation will round this to the next byte. That is, dictionary pointers are not
+     * going to be stored on split bytes.
+     */
+    auto ptr_bits_count = utils::bytes::count_bits(dict.size());
+    auto ptr_size = ptr_bits_count / 8 + 1;
+
+    utils::bytes::ByteSequence encoded{std::byte{ptr_size}};
+    encoded.reserve(dict_ptrs.size() * sizeof(size_t));
+
+    for (std::size_t i = ASCII_TABLE_SIZE; i < dict.size(); i++)
+    {
+      auto node = dict.entry(i);
+      auto encoded_parent_ptr = utils::bytes::to_bytes(node->parent->index);
+
+      std::copy_n(std::make_move_iterator(encoded_parent_ptr.cbegin()), ptr_size,
+          std::back_inserter(encoded));
+      encoded.push_back(node->symbol);
+    }
+
+    for (auto p : dict_ptrs)
+    {
+      auto encoded_ptr = utils::bytes::to_bytes(p);
+      std::copy_n(std::make_move_iterator(encoded_ptr.cbegin()), ptr_size,
+          std::back_inserter(encoded));
     }
 
     return encoded;

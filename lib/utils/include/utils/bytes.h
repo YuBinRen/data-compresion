@@ -1,4 +1,4 @@
-#pragma once
+  #pragma once
 
 #include <array>
 #include <cstddef>
@@ -105,6 +105,20 @@ ByteSequence to_byte_array(const Container &c)
   }
 
   return bytes;
+}
+
+template <typename Integer>
+std::size_t count_bits(Integer n)
+{
+  static_assert(std::is_integral_v<Integer>);
+
+  std::size_t bits_count = 0;
+  do
+  {
+    bits_count++;
+  } while (n >>= 1);
+
+  return bits_count;
 }
 
 }  // namespace utils::bytes
