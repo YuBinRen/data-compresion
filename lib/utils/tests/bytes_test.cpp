@@ -44,7 +44,6 @@ TEST(BytesInterop, FromBytes)
 
   // test 5 bytes to a 64-bit integer
   unsigned char bytes64_a[]{0x9A, 0x78, 0x56, 0x34, 0x12};
-  EXPECT_EQ(0x123456789A, (from_bytes<std::int32_t>(bytes64_a)));
   EXPECT_EQ(0x123456789A, (from_bytes<std::int64_t>(bytes64_a)));
   EXPECT_EQ(0x123456789A, (from_bytes<std::size_t>(bytes64_a)));
 

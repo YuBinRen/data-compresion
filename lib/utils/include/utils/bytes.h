@@ -47,6 +47,8 @@ namespace detail
     T operator()(const U (&c)[N]) noexcept
     {
       static_assert(sizeof(U) == 1);
+      static_assert(std::size(c) <= bytes_count, "Bytes do not fit in the desired integral type.");
+
       return impl(std::rbegin(c), std::rend(c));
     }
 
