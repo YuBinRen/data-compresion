@@ -118,12 +118,7 @@ public:
     return size_ > index;
   }
 
-  /**
-   * \brief Find the index of the given sequence within the dictionary.
-   * \param bytes The byte array to be searched for.
-   * \return The index of the last node in the given sequence, or an empty optional otherwise.
-   */
-  std::optional<std::size_t> find(const utils::bytes::ByteSequence &bytes) const noexcept
+  Node *find_node(const utils::bytes::ByteSequence &bytes) const noexcept
   {
     Node *curr = root_.get();
     std::size_t front = 0;
@@ -133,32 +128,31 @@ public:
       auto chr = bytes[front++];
       if (!curr->child_at(chr))
       {
-        return std::nullopt;
+        return nullptr;
       }
 
       curr = curr->child_at(chr);
     }
 
-    return curr->index;
+    return curr;
   }
 
   /**
-   * \brief Find the given string/string view in the dictionary.
-   * \param sv The string/string view to be searched for.
-   * \return The index of the last node in the given string/string view, or an empty optional
-   * otherwise.
+   * \brief Find the index of the given sequence within the dictionary.
+   * \param bytes The byte array to be searched for.
+   * \return The index of the last node in the given sequence, or an empty optional otherwise.
    */
-  std::optional<std::size_t> find(std::string_view sv) const noexcept
+  std::optional<std::size_t> find(const utils::bytes::ByteSequence &bytes) const noexcept
   {
-    utils::bytes::ByteSequence bytes;
-    bytes.reserve(sv.size());
-
-    for (auto it = sv.cbegin(); it != sv.cend(); ++it)
+    auto node = find_node(bytes);
+    if (node)
     {
-      bytes.push_back(std::byte{*it});
+      return node->index;
     }
-
-    return find(bytes);
+    else
+    {
+      return std::nullopt;
+    }
   }
 
   /**
@@ -236,13 +230,18 @@ protected:
 
     int pos_count = 0;
 
+    Dictionary::Node *curr_node = nullptr;
     for (std::size_t i = 0; i != raw.size(); i++)
     {
       std::byte x = raw[i];
+      if (!curr_node)
+      {
+        curr_node = dict.find_node(temp);
+      }
 
       utils::bytes::ByteSequence next_seq{seq::emplace_back_copy(temp, x)};
 
-      if (!dict.find(next_seq))  // We don't have the entry Ix in dictionary
+      if (!curr_node->child_at(x))  // We don't have the entry Ix in dictionary
       {
         dict.put_sequence(next_seq);
         auto p = *dict.find(temp);
@@ -251,11 +250,13 @@ protected:
 
         temp.clear();
         temp.emplace_back(x);
+        curr_node = nullptr;
 
         continue;
       }
 
-      temp.push_back(raw[i]);
+      temp.push_back(x);
+      curr_node = curr_node->child_at(x);
     }
 
     /*
