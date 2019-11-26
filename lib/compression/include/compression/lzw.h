@@ -270,6 +270,12 @@ protected:
     utils::bytes::ByteSequence encoded{std::byte{ptr_size}};
     encoded.reserve(dict_ptrs.size() * sizeof(size_t));
 
+    auto encoded_ptrs_count = utils::bytes::to_bytes(dict.size() - ASCII_TABLE_SIZE);
+    std::copy_n(std::make_move_iterator(encoded_ptrs_count.cbegin()), ptr_size,
+        std::back_inserter(encoded));
+
+    std::cout << "ptrs_count = " << dict.size() - ASCII_TABLE_SIZE << "\n";
+
     for (std::size_t i = ASCII_TABLE_SIZE; i < dict.size(); i++)
     {
       auto node = dict.entry(i);
@@ -291,7 +297,19 @@ protected:
   }
 
   static utils::bytes::ByteSequence decode(const utils::bytes::ByteSequence &encoded)
-  {}
+  {
+    auto ptr_size = std::to_integer<std::size_t>(encoded.front());
+
+    std::size_t curr = encoded.begin() + 1;
+
+    std::vector<std::byte> b(curr, curr + ptr_size);
+    auto ptrs_count = utils::bytes::from_bytes<std::size_t>(std::move(b));
+
+    std::cout << "found ptrs_count = " << ptrs_count << "\n";
+
+    Dictionary dict;
+
+  }
 };
 
 }  // namespace compression
