@@ -109,6 +109,16 @@ public:
     return curr->index;
   }
 
+  Node *put_symbol(std::size_t parent_idx, std::byte symbol) noexcept
+  {
+    auto node_idx = size_++;
+    Node *parent = entries_[parent_idx];
+    Node *child = parent->add_child(node_idx, symbol);
+    entries_.push_back(child);
+
+    return child;
+  }
+
   /**
    * \brief Checks whether a sequence with the given index exists in the dictionary.
    * \param index The index to be checked.
@@ -231,6 +241,8 @@ protected:
     int pos_count = 0;
 
     Dictionary::Node *curr_node = nullptr;
+    std::cout << "raw size = " << raw.size() << std::endl;
+
     for (std::size_t i = 0; i != raw.size(); i++)
     {
       std::byte x = raw[i];
@@ -260,12 +272,26 @@ protected:
     }
 
     /*
+     * After the EOF condition is met, we need to make sure to create and emit the dictionary
+     * pointer of the last sequence.
+     */
+    auto temp_ptr = dict.find(temp);
+    if (!temp_ptr.has_value())
+    {
+      temp_ptr = dict.put_sequence(temp);
+    }
+
+    dict_ptrs.push_back(*temp_ptr);
+
+    /*
      * We need to determine how many bits per dictionary pointer our archive requires. Currently,
      * this implementation will round this to the next byte. That is, dictionary pointers are not
      * going to be stored on split bytes.
      */
     auto ptr_bits_count = utils::bytes::count_bits(dict.size());
     auto ptr_size = ptr_bits_count / 8 + 1;
+
+    std::cout << "ptr_size = " << ptr_size << "\n";
 
     utils::bytes::ByteSequence encoded{std::byte{ptr_size}};
     encoded.reserve(dict_ptrs.size() * sizeof(size_t));
@@ -299,16 +325,47 @@ protected:
   static utils::bytes::ByteSequence decode(const utils::bytes::ByteSequence &encoded)
   {
     auto ptr_size = std::to_integer<std::size_t>(encoded.front());
+    std::cout << "ptr_size = " << ptr_size << "\n";
 
-    std::size_t curr = encoded.begin() + 1;
+    auto it = std::next(encoded.begin());
 
-    std::vector<std::byte> b(curr, curr + ptr_size);
+    std::vector<std::byte> b(it, std::next(it, ptr_size));
     auto ptrs_count = utils::bytes::from_bytes<std::size_t>(std::move(b));
+    std::advance(it, ptr_size);
 
     std::cout << "found ptrs_count = " << ptrs_count << "\n";
 
     Dictionary dict;
 
+    for (std::size_t i = 0; i < ptrs_count; i++)
+    {
+      std::vector<std::byte> encoded_parent_ptr(it, std::next(it, ptr_size));
+      std::advance(it, ptr_size);
+
+      auto parent_ptr = utils::bytes::from_bytes<std::size_t>(std::move(encoded_parent_ptr));
+      auto symbol = *(it++);
+
+      dict.put_symbol(parent_ptr, symbol);
+    }
+
+    std::cout << "dict.size() = " << dict.size() << "\n";
+
+    utils::bytes::ByteSequence decompressed;
+    // TODO How much to reserve?
+
+    while (it != encoded.end())
+    {
+      std::vector<std::byte> encoded_ptr(it, std::next(it, ptr_size));
+      std::advance(it, ptr_size);
+
+      auto ptr = utils::bytes::from_bytes<std::size_t>(std::move(encoded_ptr));
+      auto seq = dict[ptr];
+
+      std::copy(std::make_move_iterator(seq.cbegin()), std::make_move_iterator(seq.cend()),
+          std::back_inserter(decompressed));
+    }
+
+    return decompressed;
   }
 };
 

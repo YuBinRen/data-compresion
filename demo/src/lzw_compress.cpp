@@ -12,6 +12,12 @@ int main(std::int32_t argc, char **argv)
 {
   using compression::variants::LZWCompressor;
 
+  if (argc < 3)
+  {
+    std::cerr << "usage: lzw_compress <source_file> <output_file>\n";
+    return 1;
+  }
+
   auto raw_file_size = std::filesystem::file_size(argv[1]);
   std::ifstream raw_file{argv[1], std::ios_base::in | std::ios_base::binary};
 
@@ -22,7 +28,11 @@ int main(std::int32_t argc, char **argv)
   auto t1 = std::chrono::high_resolution_clock::now();
 
   auto encoded = LZWCompressor::compress(raw);
-  std::cout << "bytes_count = " << encoded.size() << std::endl;
+
+  double compression_ratio = 1. * encoded.size() / raw_file_size * 100;
+
+  std::cout << "Encoded size: " << encoded.size() << " bytes.\n";
+  std::cout << "Compression ratio: " << compression_ratio << "%.\n";
 
   auto t2 = std::chrono::high_resolution_clock::now();
 
