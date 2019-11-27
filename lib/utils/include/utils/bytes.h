@@ -56,11 +56,14 @@ namespace detail
     template <typename InputIt>
     T impl(InputIt rbegin, InputIt rend) noexcept
     {
+      static_assert(sizeof(decltype(*rbegin)) == 1);
+      static_assert(sizeof(decltype(*rend)) == 1);
+
       T res = 0;
 
       for (auto it = rbegin; it != rend; it++)
       {
-        (res <<= 8) |= *it;
+        (res <<= 8) |= static_cast<unsigned char>(*it);
       }
 
       return res;
