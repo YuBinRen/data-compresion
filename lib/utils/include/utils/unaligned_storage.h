@@ -42,7 +42,7 @@ template <class InputIt>
 class Reader
 {
 public:
-  Reader(InputIt it) : it_{it}, bit_idx_{0}, consumed_bits_{0}
+  Reader(InputIt it) : it_{it}, bit_idx_{0}
   {
     static_assert(sizeof(decltype(*it)) == 1);
   }
@@ -77,7 +77,6 @@ public:
 private:
   InputIt it_;
   std::uint8_t bit_idx_;
-  std::uint8_t consumed_bits_;
 };
 
 
