@@ -1,10 +1,10 @@
-  #pragma once
+#pragma once
 
 #include <array>
 #include <cstddef>
 #include <cstdint>
-#include <vector>
 #include <iterator>
+#include <vector>
 
 namespace utils::bytes
 {

@@ -1,9 +1,8 @@
 #include "utils/bytes.h"
 
 #include "gtest/gtest.h"
-
-#include <cstdint>
 #include <array>
+#include <cstdint>
 
 namespace utils::bytes
 {
@@ -51,4 +50,4 @@ TEST(BytesInterop, FromBytes)
   EXPECT_EQ(0x1234, from_bytes<std::int32_t>(std::array<std::uint8_t, 2>{0x34, 0x12}));
 }
 
-}
+}  // namespace utils::bytes

@@ -1,12 +1,12 @@
 #include "compression/variants.h"
 #include "utils/bytes.h"
 
-#include <iostream>
-#include <string>
+#include <chrono>
+#include <filesystem>
 #include <fstream>
 #include <ios>
-#include <filesystem>
-#include <chrono>
+#include <iostream>
+#include <string>
 
 int main(std::int32_t argc, char **argv)
 {
@@ -35,7 +35,7 @@ int main(std::int32_t argc, char **argv)
   std::cout << "Took " << dur_s.count() << "s.\n";
 
   std::ofstream output_file{argv[2], std::ios_base::out | std::ios_base::binary};
-  output_file.write((char *) decoded.data(), decoded.size());
+  output_file.write((char *)decoded.data(), decoded.size());
 
   return 0;
 }

@@ -15,3 +15,11 @@ cc_binary(
     "//lib/utils:utils",
   ],
 )
+cc_binary(
+  name = "huffman_encode",
+  srcs = ["src/huffman_encode.cpp"],
+  deps = [
+    "//lib/compression:compression",
+    "//lib/utils:utils",
+  ],
+)

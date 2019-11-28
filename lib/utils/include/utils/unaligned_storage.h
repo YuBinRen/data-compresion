@@ -79,5 +79,4 @@ private:
   std::uint8_t bit_idx_;
 };
 
-
-}
+}  // namespace utils::unaligned_storage

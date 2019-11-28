@@ -10,11 +10,11 @@
 
 int main(std::int32_t argc, char **argv)
 {
-  using compression::variants::LZWCompressor;
+  using compression::variants::HuffmanCoding;
 
   if (argc < 3)
   {
-    std::cerr << "usage: lzw_compress <source_file> <output_file>\n";
+    std::cerr << "usage: huffman_encode <source_file> <output_file>\n";
     return 1;
   }
 
@@ -27,7 +27,7 @@ int main(std::int32_t argc, char **argv)
 
   auto t1 = std::chrono::high_resolution_clock::now();
 
-  auto encoded = LZWCompressor::compress(raw);
+  auto encoded = HuffmanCoding::compress(raw);
 
   double compression_ratio = 1. * encoded.size() / raw_file_size * 100;
 

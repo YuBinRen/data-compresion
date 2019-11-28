@@ -315,8 +315,8 @@ protected:
     for (auto p : dict_ptrs)
     {
       auto encoded_ptr = utils::bytes::to_bytes(p);
-      std::copy_n(std::make_move_iterator(encoded_ptr.cbegin()), ptr_size,
-          std::back_inserter(encoded));
+      std::copy_n(
+          std::make_move_iterator(encoded_ptr.cbegin()), ptr_size, std::back_inserter(encoded));
     }
 
     return encoded;

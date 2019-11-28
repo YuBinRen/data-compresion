@@ -1,11 +1,10 @@
 #include "utils/unaligned_storage.h"
 
 #include "gtest/gtest.h"
-
-#include <vector>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
+#include <vector>
 
 namespace utils::unaligned_storage
 {
@@ -56,4 +55,4 @@ TEST(Reader, MoreBytes)
   EXPECT_EQ(reader2.read<std::size_t>(4), 0b00001011);
 }
 
-}
+}  // namespace utils::unaligned_storage
