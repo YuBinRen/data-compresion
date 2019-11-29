@@ -4,6 +4,7 @@
 #include <iterator>
 #include <memory>
 #include <type_traits>
+#include <bitset>
 
 namespace utils::unaligned_storage
 {
@@ -30,6 +31,15 @@ public:
     }
 
     *val_ |= ValueType(static_cast<std::uint8_t>(bit) << (bit_idx_++));
+  }
+
+  template <std::size_t N>
+  void operator()(std::bitset<N> bitset, std::size_t bits_count = N)
+  {
+    for (std::size_t i = 0; i < bits_count; i++)
+    {
+      operator()(bitset.test(i));
+    }
   }
 
 private:
