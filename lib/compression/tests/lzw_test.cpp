@@ -37,7 +37,7 @@ TEST(Dictionary, PutSequence)
 
   for (auto it = std::begin(sequences); it != std::end(sequences); it++)
   {
-    EXPECT_TRUE(dict.find(*it));
+    EXPECT_TRUE(dict.find(utils::bytes::to_byte_array(*it)));
   }
 }
 
@@ -56,7 +56,7 @@ TEST(Dictionary, Find)
   {
     for (std::size_t i = 1; i < it->size(); i++)
     {
-      EXPECT_TRUE(dict.find(it->substr(0, i)));
+      EXPECT_TRUE(dict.find(utils::bytes::to_byte_array(it->substr(0, i))));
     }
   }
 }

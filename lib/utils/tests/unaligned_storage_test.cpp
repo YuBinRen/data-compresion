@@ -41,7 +41,7 @@ TEST(Writer, Bitset)
   unaligned_write(bitset);
 
   EXPECT_EQ(stream.size(), 2);
-  EXPECT_EQ(stream[0], std::byte{0b11010011});
+  EXPECT_EQ(stream[0], std::byte{0b11001011});
   EXPECT_EQ(stream[1], std::byte{0b00000011});
 }
 
