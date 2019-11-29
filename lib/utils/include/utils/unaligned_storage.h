@@ -1,10 +1,10 @@
 #pragma once
 
+#include <bitset>
 #include <cstdint>
 #include <iterator>
 #include <memory>
 #include <type_traits>
-#include <bitset>
 
 namespace utils::unaligned_storage
 {
@@ -82,6 +82,11 @@ public:
     }
 
     return val;
+  }
+
+  InputIt begin() const
+  {
+    return it_;
   }
 
 private:

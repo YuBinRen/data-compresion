@@ -1,6 +1,7 @@
 #include "utils/unaligned_storage.h"
 
 #include "gtest/gtest.h"
+#include <bitset>
 #include <cstddef>
 #include <cstdint>
 #include <iterator>
@@ -28,6 +29,20 @@ TEST(Writer, UsingBool)
   EXPECT_EQ(stream.size(), 2);
   EXPECT_EQ(stream[0], std::byte{0b00100101});
   EXPECT_EQ(stream[1], std::byte{0b00000111});
+}
+
+TEST(Writer, Bitset)
+{
+  std::vector<std::byte> stream;
+  Writer unaligned_write{stream};
+
+  std::bitset<10> bitset("1111001011");
+
+  unaligned_write(bitset);
+
+  EXPECT_EQ(stream.size(), 2);
+  EXPECT_EQ(stream[0], std::byte{0b11010011});
+  EXPECT_EQ(stream[1], std::byte{0b00000011});
 }
 
 TEST(Reader, OneByte)

@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
@@ -43,7 +44,10 @@ public:
     std::array<Node *, ASCII_TABLE_SIZE> children;
 
     Node(Node *parent, std::size_t index, std::byte symbol) :
-        parent{parent}, index{index}, symbol{symbol}, children{}
+        parent{parent},
+        index{index},
+        symbol{symbol},
+        children{}
     {
       children.fill(nullptr);
     }
@@ -241,7 +245,6 @@ protected:
     int pos_count = 0;
 
     Dictionary::Node *curr_node = nullptr;
-    std::cout << "raw size = " << raw.size() << std::endl;
 
     for (std::size_t i = 0; i != raw.size(); i++)
     {
@@ -289,9 +292,7 @@ protected:
      * going to be stored on split bytes.
      */
     auto ptr_bits_count = utils::bytes::count_bits(dict.size());
-    auto ptr_size = ptr_bits_count / 8 + 1;
-
-    std::cout << "ptr_size = " << ptr_size << "\n";
+    auto ptr_size = std::ceil(ptr_bits_count / 8.);
 
     utils::bytes::ByteSequence encoded{std::byte{ptr_size}};
     encoded.reserve(dict_ptrs.size() * sizeof(size_t));
@@ -299,8 +300,6 @@ protected:
     auto encoded_ptrs_count = utils::bytes::to_bytes(dict.size() - ASCII_TABLE_SIZE);
     std::copy_n(std::make_move_iterator(encoded_ptrs_count.cbegin()), ptr_size,
         std::back_inserter(encoded));
-
-    std::cout << "ptrs_count = " << dict.size() - ASCII_TABLE_SIZE << "\n";
 
     for (std::size_t i = ASCII_TABLE_SIZE; i < dict.size(); i++)
     {
@@ -325,15 +324,12 @@ protected:
   static utils::bytes::ByteSequence decode(const utils::bytes::ByteSequence &encoded)
   {
     auto ptr_size = std::to_integer<std::size_t>(encoded.front());
-    std::cout << "ptr_size = " << ptr_size << "\n";
 
     auto it = std::next(encoded.begin());
 
     std::vector<std::byte> b(it, std::next(it, ptr_size));
     auto ptrs_count = utils::bytes::from_bytes<std::size_t>(std::move(b));
     std::advance(it, ptr_size);
-
-    std::cout << "found ptrs_count = " << ptrs_count << "\n";
 
     Dictionary dict;
 
@@ -348,10 +344,7 @@ protected:
       dict.put_symbol(parent_ptr, symbol);
     }
 
-    std::cout << "dict.size() = " << dict.size() << "\n";
-
     utils::bytes::ByteSequence decompressed;
-    // TODO How much to reserve?
 
     while (it != encoded.end())
     {

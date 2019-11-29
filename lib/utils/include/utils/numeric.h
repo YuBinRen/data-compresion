@@ -1,5 +1,5 @@
-#include <numeric>
 #include <iterator>
+#include <numeric>
 
 namespace utils::numeric
 {
@@ -16,4 +16,4 @@ static auto gcd(InputIt first, InputIt last)
   return result;
 }
 
-}
+}  // namespace utils::numeric

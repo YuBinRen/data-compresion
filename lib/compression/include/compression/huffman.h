@@ -15,6 +15,7 @@
 #include <utility>
 #include <bitset>
 #include <stack>
+#include <cmath>
 
 namespace compression
 {
@@ -133,43 +134,34 @@ protected:
      * This must be left intact to be written in the encoded output.
      */
     const auto freq_map = make_freq_map(raw);
-
-    auto cmp = [](auto &&a, auto &&b) {
-      return b->freq < a->freq;
-    };
-
-    std::priority_queue<Node *, std::vector<Node *>, decltype(cmp)> pq(cmp);
-    for (auto [b, f] : freq_map)
-    {
-      pq.push(new Node(b, f));
-    }
-
-    while (pq.size() > 1)
-    {
-      auto left = pq.top();
-      pq.pop();
-      auto right = pq.top();
-      pq.pop();
-
-      pq.push(make_subtree(left, right));
-    }
-
-    auto parent = pq.top();
-    pq.pop();
-
-    auto symbols_tree = make_tree(parent);
+    auto symbols_tree = make_tree(freq_map);
     auto symbol_codes = symbols_tree.to_table();
+
+    for (const auto &[byte, freq] : freq_map)
+    {
+      auto chr = std::to_integer<std::size_t>(byte);
+      auto [code, codelen] = symbol_codes[byte];
+      auto codestr = code.to_string();
+    }
 
     utils::bytes::ByteSequence output;
     output.reserve(raw.size());
 
     auto max_freq = std::max_element(freq_map.cbegin(), freq_map.cend(), [](auto &&a, auto &&b) {
-      return a.second > b.second;
+      return a.second < b.second;
     });
     auto freq_bits_count = utils::bytes::count_bits(max_freq->second);
-    auto freq_bytes_count = freq_bits_count / 8 + (freq_bits_count % 8 == 0 ? 0 : 1);
+    std::uint8_t freq_bytes_count = std::ceil(freq_bits_count / 8.);
+    // how many bytes the number of elements in the archive takes
+    std::uint8_t elems_count_size = std::ceil(utils::bytes::count_bits(raw.size()) / 8.);
 
-    output.push_back(std::byte{freq_bytes_count});
+    /*
+     * Control byte structure:
+     * Mask 11110000 must be applied to obtain the size of archive counter.
+     * Mask 00001111 must be applied to obtain the size of frequency values.
+     */
+    output.push_back(std::byte{freq_bytes_count | (elems_count_size << 4)});
+    output.push_back(std::byte{symbol_codes.size()});  // how many symbols have been emitted.
 
     for (const auto &[byte, freq] : freq_map)
     {
@@ -178,6 +170,9 @@ protected:
       auto fb = utils::bytes::to_bytes(freq);
       std::copy_n(std::make_move_iterator(fb.begin()), freq_bytes_count, std::back_inserter(output));
     }
+
+    auto elems_count_bytes = utils::bytes::to_bytes(raw.size());
+    std::copy_n(std::make_move_iterator(elems_count_bytes.begin()), elems_count_size, std::back_inserter(output));
 
     utils::unaligned_storage::Writer write_unaligned{output};
 
@@ -191,7 +186,69 @@ protected:
   }
 
   static utils::bytes::ByteSequence decode(const utils::bytes::ByteSequence &encoded)
-  {}
+  {
+    auto front = encoded.begin();
+
+    auto control = std::to_integer<std::uint8_t>(*front++);
+    auto freq_size = control & 0xF;
+    auto elems_count_size = (control & 0xF0) >> 4;
+
+    auto table_size = std::to_integer<std::size_t>(*front++);
+
+    FreqMap freq_map;
+    for (std::size_t i = 0; i < table_size; i++)
+    {
+      std::byte symbol = *front++;
+      utils::bytes::ByteSequence bf(front, std::next(front, freq_size));
+      std::advance(front, freq_size);
+
+      auto freq = utils::bytes::from_bytes<std::size_t>(std::move(bf));
+
+      freq_map.emplace(symbol, freq);
+    }
+
+    utils::bytes::ByteSequence decompressed;
+
+    auto symbols_tree = make_tree(freq_map);
+    auto symbol_codes = symbols_tree.to_table();
+
+    for (const auto &[byte, freq] : freq_map)
+    {
+      auto chr = std::to_integer<std::size_t>(byte);
+      auto [code, codelen] = symbol_codes[byte];
+      auto codestr = code.to_string();
+    }
+
+    auto elems_count_bytes = utils::bytes::ByteSequence(front, std::next(front, elems_count_size));
+    auto elems_count = utils::bytes::from_bytes<std::size_t>(std::move(elems_count_bytes));
+    std::advance(front, elems_count_size);
+
+    auto curr = symbols_tree.root;
+
+    utils::unaligned_storage::Reader reader{front};
+
+    while (elems_count)
+    {
+      if (curr->is_leaf())
+      {
+        decompressed.push_back(curr->symbol);
+        curr = symbols_tree.root;
+        elems_count--;
+      }
+
+      bool bit = reader.read();
+      if (bit == 1)  // the left edge must be picked
+      {
+        curr = curr->left;
+      }
+      else  // if 0, the right edge must be picked
+      {
+        curr = curr->right;
+      }
+    }
+
+    return decompressed;
+  }
 
 private:
   static FreqMap make_freq_map(const utils::bytes::ByteSequence &raw)
@@ -228,8 +285,36 @@ private:
     return new Node(std::byte{0}, left->freq + right->freq, left, right);
   }
 
-  static FreqTree make_tree(Node *root)
+  static FreqTree make_tree(const FreqMap &freq_map)
   {
+    auto cmp = [](auto &&a, auto &&b) {
+      if (a->freq == b->freq)
+      {
+        return a->symbol < b->symbol;
+      }
+
+      return b->freq < a->freq;
+    };
+
+    std::priority_queue<Node *, std::vector<Node *>, decltype(cmp)> pq(cmp);
+    for (auto [b, f] : freq_map)
+    {
+      pq.push(new Node(b, f));
+    }
+
+    while (pq.size() > 1)
+    {
+      auto left = pq.top();
+      pq.pop();
+      auto right = pq.top();
+      pq.pop();
+
+      pq.push(make_subtree(left, right));
+    }
+
+    auto root = pq.top();
+    pq.pop();
+
     return FreqTree{root};
   }
 };
