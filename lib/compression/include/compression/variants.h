@@ -7,8 +7,7 @@
 namespace compression::variants
 {
 
-using LZWCompressor = compression::Compressor<compression::LZW<1>>;
-using AdvancedLZWCompressor = compression::Compressor<compression::LZW<2>>;
+using LZWCompressor = compression::Compressor<compression::LZW>;
 using HuffmanCoding = compression::Compressor<compression::Huffman>;
 
 }  // namespace compression::variants

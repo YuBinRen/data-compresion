@@ -230,7 +230,6 @@ private:
   std::size_t size_{0};
 };
 
-template <std::uint8_t compression_level = 1>
 class LZW
 {
 protected:
